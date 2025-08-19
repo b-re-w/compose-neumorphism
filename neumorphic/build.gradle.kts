@@ -1,27 +1,26 @@
 import org.jetbrains.compose.ExperimentalComposeLibrary
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetpack.compose)
+    alias(libs.plugins.compose.compiler)
 }
 
 kotlin {
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = JavaVersion.VERSION_1_8.toString()
-            }
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
     jvm("desktop") {
-        compilations.all {
-            kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
-    ios()
     listOf(
         iosX64(),
         iosArm64(),
@@ -41,8 +40,6 @@ kotlin {
                 api(compose.material)
                 @OptIn(ExperimentalComposeLibrary::class)
                 api(compose.components.resources)
-                api(libs.androidx.annotation)
-                api(libs.skiko.common)
             }
         }
         val androidMain by getting {
@@ -58,23 +55,15 @@ kotlin {
                 api(compose.desktop.currentOs)
             }
         }
-        val iosX64Main by getting
-        val iosArm64Main by getting
-        val iosSimulatorArm64Main by getting
-        val iosMain by getting {
-            iosX64Main.dependsOn(this)
-            iosArm64Main.dependsOn(this)
-            iosSimulatorArm64Main.dependsOn(this)
-        }
     }
 }
 
 android {
     namespace = "com.gandiva.neumorphism"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    compileSdk = 36
 
     defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
+        minSdk = 24
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -91,27 +80,9 @@ android {
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
-    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-
-    libraryVariants.all {
-        outputs.all {
-            packageLibraryProvider {
-                archiveFileName.set(getArtifactName())
-            }
-        }
-    }
 }
-
-fun getArtifactName(): String {
-    val versionName = project.rootProject.extra["artifactVersion"] as String
-    return "neumorphic-$versionName.aar"
-}
-
-apply(from = "./publish-android-library.gradle")
